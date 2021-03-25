@@ -4,6 +4,7 @@ require('dotenv').config({
 
 const express = require('express')
 const mongoose = require('mongoose')
+const helmet = require('helmet')
 
 class ApiController {
   constructor() {
@@ -25,7 +26,7 @@ class ApiController {
   webServerSetup() {
     this.express.use(express.json())
     this.express.use(helmet())
-    this.express.routes()
+    this.express.use(require('./dependencies/express.routes'))
   }
 }
 
