@@ -1,9 +1,18 @@
-const axios = require('axiox')
+const axios = require('axios')
+
 
 const pipedrive = axios.create({
-  baseUrl: 'https://api.pipedrive.com/v1/'
+  baseURL: 'https://api.pipedrive.com/v1/'
 })
 
 pipedrive.interceptors.request.use(config => {
-  console.log(config)
-})
+
+  config.params = {
+    ...config.params,
+    api_token: process.env.PIPEDRIVE_API_KEY
+  }
+
+  return config
+}, null, { synchronous: true })
+
+module.exports = pipedrive
