@@ -1,26 +1,13 @@
-class SyncData {
-  constructor (blingApiAdapter, PipedriveAdapter, DatabaseAdapter) {
-    this.blingApi = blingApiAdapter
-    this.pipedriveApi = PipedriveAdapter
-    this.database = DatabaseAdapter
-  }
+const SyncDataService = require('../services/sync_data')
+const BlingAdapter = require('../adapters/bling_api')
+const PipedriveAdapter = require('../adapters/pipedrive_api')
+const MongooseAdapter = require('../adapters/mongoose')
 
-  async execute() {
-    try {
-      const deals = await this.pipedriveApi.get('deals', { status: 'won' }).data
-
-      for (const deal of deals) {
-        const blingRequest = this.convertPipedriveResponseToBlingRequest(deal)
-        await this.blingApi.post('pedido', blingRequest)
-      }
-
-    } catch (error) {
-      console.log(error)
-      return error
-    }
-  }
-
-  async convertPipedriveResponseToBlingRequest (deal) { // Long but clear name, to help the next dev
-    // logic that transforms pipedrive deal object into bling request object (xml)
+const SyncDataController = {
+  handle: async (req, res) => {
+    const service = new SyncDataService(BlingAdapter, PipedriveAdapter, MongooseAdapter)
+    res.send(await service.execute())
   }
 }
+
+module.exports = SyncDataController
