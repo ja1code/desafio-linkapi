@@ -1,36 +1,56 @@
-const pipedrive = require("../adapters/pipedrive_api")
-const SyncDataController = require("../controllers/sync_data")
 const js2xmlparser = require("js2xmlparser");
-const { toXML } = require('jstoxml');
 
-module.exports = class SyncDataService {
-  constructor (BlingApiAdapter, PipedriveAdapter, DatabaseAdapter) {
+module.exports = class SyncThirdPartyService {
+  constructor (BlingApiAdapter, PipedriveAdapter, DatabaseSyncService) {
     this.blingApi = BlingApiAdapter
     this.pipedriveApi = PipedriveAdapter
-    this.database = DatabaseAdapter
+    this.dbService = DatabaseSyncService
+    this.totals = []
   }
 
   async execute() {
     try {
-      this.setLastExecution() // Here only for development porpouses
-      const lastExecution = await this.getLastExecution()
+      const lastExecution = await this.dbService.getLastExecution()
 
       const filter_id = await this.createPipedriveFilter(lastExecution.wonDate)
 
       const dealsRequest = await this.pipedriveApi.get('deals', { params: { status: 'won', sort: 'id DESC', limit: 1000, filter_id } })
 
       const deals = dealsRequest.data.data
+
+      if (!deals) return { status: 'success', msg: 'data synced' }
+
       for (const deal of deals) {
-        const blingXml = await this.convertDealToXml(deal)
-        const blingRequest = await this.blingApi.post('pedido/json/', { xml: encodeURIComponent(blingXml), apikey: process.env.BLING_API_KEY })
-        console.log(blingRequest.data.retorno.erros)
+        if (deal.id > lastExecution.dealId) {
+          const dealDate = deal.first_won_time.split(' ')[0]
+          this.accumulate(dealDate, deal.weighted_value)
+          const blingXml = await this.convertDealToXml(deal)
+          await this.blingApi.post('pedido/json/', { xml: encodeURIComponent(blingXml), apikey: process.env.BLING_API_KEY })
+        }
       }
 
-      return true
+      const lastDealId = deals[0].id
+      const wonDate = deals[0].first_won_time.split(' ')[0]
+
+      this.dbService.execute(this.totals, lastDealId, wonDate)
+
+      return { status: 'success', msg: 'data synced' }
 
     } catch (error) {
-      console.log('>>', error.response.data.retorno)
+      console.log('>>', error)
       return error
+    }
+  }
+
+  async accumulate (date, value) {
+    const dateObject = this.totals.find(total => total.date === date)
+    if (!dateObject) {
+      this.totals.push({
+        date,
+        value
+      })
+    } else {
+      dateObject.value += value
     }
   }
 
@@ -122,18 +142,5 @@ module.exports = class SyncDataService {
     if (!filterCreationRequest) throw new Error()
 
     return filterCreationRequest.data.data.id || false
-  }
-
-  async getLastExecution () {
-    const query = await this.database.fetchMany('lastDeal', { dealId: -1 })
-    return query[0]
-  }
-
-  async setLastExecution () {
-    this.database.insert('lastDeal', {
-      wonDate: '2021-03-23',
-      runDate: '2021-03-25',
-      dealId: 1
-    })
   }
 }

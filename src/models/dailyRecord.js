@@ -5,8 +5,8 @@ const DailyRecordSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  total_value: {
-    type: String,
+  value: {
+    type: Number,
     required: true
   }
 })

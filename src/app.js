@@ -4,6 +4,7 @@ require('dotenv').config({
 
 const express = require('express')
 const mongoose = require('mongoose')
+mongoose.set('useFindAndModify', false)
 const helmet = require('helmet')
 
 class ApiController {

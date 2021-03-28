@@ -1,10 +1,10 @@
 const { Router } = require('express')
 
-const syncDataController = require('../controllers/sync_data')
+const syncThirdPartyController = require('../controllers/sync_third_party')
 
 const routes = Router()
 
-routes.get('/sync', syncDataController.handle)
+routes.get('/sync', syncThirdPartyController.handle)
 routes.get('*', (req, res) => {
   res.send('Nothing to be seen here')
 })

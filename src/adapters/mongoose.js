@@ -6,6 +6,7 @@ const mongooseAdapter = {
     let holder = new generic(data)
     holder.save((err) => {
       if (err) {
+        console.log(err)
         throw new Error()
       } else {
         return true
@@ -32,7 +33,7 @@ const mongooseAdapter = {
     if (holder) {
       return holder
     } else {
-      throw new Error()
+      return false
     }
   },
 
