@@ -7,9 +7,10 @@ module.exports = class SyncThirdPartyService {
     this.dbService = DatabaseSyncService
 
     this.totals = []
+    this.erroredDeals = []
     this.lastExecution = 0
     this.lastDealId = 0
-    this.wondDate = 0
+    this.lastwondDate = 0
   }
 
   async execute () {
@@ -19,18 +20,13 @@ module.exports = class SyncThirdPartyService {
       if (!deals) return { status: 'success', msg: 'data synced' }
 
       for (const deal of deals) {
-        if (deal.id > this.lastExecution.dealId) {
-          const dealDate = deal.first_won_time.split(' ')[0]
-          this.accumulate(dealDate, deal.weighted_value)
-          const blingXml = await this.convertDealToXml(deal)
-          await this.blingApi.post('pedido/json/', { xml: encodeURIComponent(blingXml), apikey: process.env.BLING_API_KEY })
-        }
+        await this.sendDealToBling(deal)
       }
 
       this.lastDealId = deals[0].id
-      this.wonDate = deals[0].first_won_time.split(' ')[0]
+      this.lastwondDate = deals[0].first_won_time.split(' ')[0]
 
-      this.dbService.execute(this.totals, this.lastDealId, this.wonDate)
+      this.dbService.execute(this.totals, this.lastDealId, this.lastwondDate)
 
       return { status: 'success', msg: 'data synced' }
     } catch (error) {
@@ -40,7 +36,7 @@ module.exports = class SyncThirdPartyService {
   }
 
   async getDealsFromPipedrive () {
-    const filter_id = this.getLastExecutionFilter() // eslint-disable-line
+    const filter_id = await this.getLastExecutionFilter() // eslint-disable-line
 
     const dealsRequest = await this.pipedriveApi.get('deals', { params: { status: 'won', sort: 'id DESC', limit: 1000, filter_id } })
 
@@ -58,10 +54,27 @@ module.exports = class SyncThirdPartyService {
   async sendDealToBling (deal) {
     if (deal.id > this.lastExecution.dealId) {
       const dealDate = deal.first_won_time.split(' ')[0]
-      this.accumulate(dealDate, deal.weighted_value)
-      const blingXml = await this.convertDealToXml(deal)
-      await this.blingApi.post('pedido/json/', { xml: encodeURIComponent(blingXml), apikey: process.env.BLING_API_KEY })
+      const request = await this.convertAndSendToBling(deal)
+      if (request) this.accumulate(dealDate, deal.weighted_value)
     }
+  }
+
+  async convertAndSendToBling (deal) {
+    const blingXml = await this.convertDealToXml(deal)
+    const request = await this.blingApi.post('pedido/json/', { xml: encodeURIComponent(blingXml), apikey: process.env.BLING_API_KEY })
+
+    if (request) {
+      return true
+    }
+
+    this.erroredDeals.push(
+      {
+        request,
+        deal
+      }
+    )
+
+    return false
   }
 
   async convertDealToXml (deal) {
