@@ -27,7 +27,6 @@ module.exports = class SyncThirdPartyService {
       this.lastwondDate = deals[0].first_won_time.split(' ')[0]
 
       this.dbService.execute(this.totals, this.lastDealId, this.lastwondDate)
-
       return { status: 'success', msg: 'data synced' }
     } catch (error) {
       console.log('>>', error)
