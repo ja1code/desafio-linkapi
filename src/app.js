@@ -27,7 +27,7 @@ class ApiController {
   webServerSetup () {
     this.express.use(express.json())
     this.express.use(helmet())
-    this.express.use(require('./dependencies/express.routes'))
+    this.express.use(require('./dependencies/express_routes'))
   }
 }
 
