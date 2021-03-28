@@ -1,9 +1,7 @@
-
-
 const mongooseAdapter = {
   async insert (type, data) {
-    let generic = require(`../models/${type}`)
-    let holder = new generic(data)
+    const Generic = require(`../models/${type}`)
+    const holder = new Generic(data)
     holder.save((err) => {
       if (err) {
         console.log(err)
@@ -14,12 +12,12 @@ const mongooseAdapter = {
     })
   },
   async update (type, data, who) {
-    let generic = require(`../models/${type}`)
-    let holder = await generic.findOne(who)
+    const generic = require(`../models/${type}`)
+    const holder = await generic.findOne(who)
     if (!holder) {
       return false
     }
-    let query = await generic.findByIdAndUpdate({_id: holder.id}, data)
+    const query = await generic.findByIdAndUpdate({ _id: holder.id }, data)
     if (query) {
       return true
     } else {
@@ -28,8 +26,8 @@ const mongooseAdapter = {
   },
 
   async fetch (type, who) {
-    let generic = require(`../models/${type}`)
-    let holder = await generic.findOne(who)
+    const generic = require(`../models/${type}`)
+    const holder = await generic.findOne(who)
     if (holder) {
       return holder
     } else {
@@ -37,9 +35,9 @@ const mongooseAdapter = {
     }
   },
 
-  async fetchMany (type, filter=null) {
-    let generic = require(`../models/${type}`)
-    let holder = await generic.find().sort(filter)
+  async fetchMany (type, filter = null) {
+    const generic = require(`../models/${type}`)
+    const holder = await generic.find().sort(filter)
     if (holder) {
       return holder
     } else {

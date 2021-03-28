@@ -4,8 +4,7 @@ module.exports = class SyncDatabaseService {
   }
 
   async execute (totals, dealId, wonDate) {
-
-    for (let total of totals) {
+    for (const total of totals) {
       const totalRecord = await this.getDateInserted(total.date)
       if (!totalRecord) {
         this.insertRecord(total.date, total.value)
@@ -20,7 +19,7 @@ module.exports = class SyncDatabaseService {
 
   async setLastExecution (wonDate, dealId) {
     const today = new Date()
-    const runDate = `${today.getFullYear()}-${today.getMonth() < 10 ? '0' + (today.getMonth() + 1) : (today.getMonth() + 1) }-${today.getDate()}`
+    const runDate = `${today.getFullYear()}-${today.getMonth() < 10 ? '0' + (today.getMonth() + 1) : (today.getMonth() + 1)}-${today.getDate()}`
 
     await this.database.insert('lastDeal', {
       runDate,
@@ -41,11 +40,11 @@ module.exports = class SyncDatabaseService {
     })
     return query
   }
-  
+
   async updateDateRecord (date, value) {
     await this.database.update('dailyRecord', { value }, { date })
   }
-  
+
   async insertRecord (date, value) {
     await this.database.insert('dailyRecord', {
       date, value

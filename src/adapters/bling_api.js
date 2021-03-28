@@ -5,8 +5,8 @@ const bling = axios.create({
   baseURL: 'https://bling.com.br/Api/v2/'
 })
 
-function onPostCall(config) {
-  return config.method === 'post';
+function onPostCall (config) {
+  return config.method === 'post'
 }
 
 bling.interceptors.request.use(config => {
