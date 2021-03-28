@@ -23,12 +23,14 @@ module.exports = class SyncThirdPartyService {
         await this.sendDealToBling(deal)
       }
 
+      if (this.erroredDeals.length) this.retryErroredRequests()
+
       this.lastDealId = deals[0].id
       this.lastwondDate = deals[0].first_won_time.split(' ')[0]
 
       this.dbService.execute(this.totals, this.lastDealId, this.lastwondDate)
 
-      return { status: 'success', msg: 'data synced' }
+      return await this.buildResponse(deals.length)
     } catch (error) {
       console.log('>>', error)
       return error
@@ -176,6 +178,31 @@ module.exports = class SyncThirdPartyService {
       })
     } else {
       dateObject.value += value
+    }
+  }
+
+  async retryErroredRequests () {
+    for (const erroredDeal of this.erroredDeals) {
+      const { deal } = erroredDeal
+      const dealDate = deal.first_won_time.split(' ')[0]
+      const retry = await this.sendDealToBling(deal)
+      if (retry) {
+        const dealIndex = this.erroredDeals.indexOf(item => item.id === deal.id)
+
+        this.erroredDeals.splice(dealIndex, 1)
+
+        this.accumulate(dealDate, erroredDeal.weighted_value)
+      }
+    }
+  }
+
+  async buildResponse (dealsQtd) {
+    return {
+      status: 'success',
+      details: {
+        sent: dealsQtd - this.erroredDeals.length,
+        errored: this.erroredDeals.length
+      }
     }
   }
 }

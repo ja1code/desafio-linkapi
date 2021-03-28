@@ -23,7 +23,12 @@ $ npm i
 ```bash
 $ npm run start-dev
 ```
-> It will run a local web server under the 3030 port
+> It will run a local web server under the 3030 port.
 ## Endpoints:
 ### GET /sync
-This endpoint runs the main flow that pulls data from Pipedrive, send them to Bling and write the daily total sums in MongoDB
+This endpoint runs the main flow that pulls data from Pipedrive, send them to Bling and write the daily total sums in MongoDB.
+### GET /sync-detached
+This endpoint runs the main flow in the background as a detached process, freeing up the API and ending the request.
+
+## Run the sync routine in a scheduled way
+Depending on your OS, create a CRON similar routine that runs `src/detached.js` in the interval desired.
